@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_navbar.dart';
 import '../widgets/custom_footer.dart';
 import '../widgets/event_card.dart';
 import '../services/event_service.dart';
 import '../constants/app_colors.dart';
 import 'events_page.dart';
 import 'create_event_page.dart';
-import 'login_page.dart'; // Add this
-import 'dashboard_page.dart'; // Add this
 
 class HomePage extends StatelessWidget {
+  final Function(int)? onNavTap;
+
+  const HomePage({this.onNavTap});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomNavbar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

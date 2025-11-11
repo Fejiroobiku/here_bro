@@ -11,20 +11,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:here_bro/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('EventEase app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(EventEaseApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the app starts and shows the EventEase title.
+    expect(find.text('EventEase'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify that the bottom navigation bar is present.
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify the bottom navigation items exist.
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Browse'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
   });
 }

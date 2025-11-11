@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_navbar.dart';
 import '../widgets/custom_footer.dart';
 import '../constants/app_colors.dart';
 
@@ -7,7 +6,21 @@ class CreateEventPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomNavbar(),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.event, color: AppColors.emerald600),
+            SizedBox(width: 8),
+            Text('Create Event', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.gray800),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_navbar.dart';
 import '../widgets/custom_footer.dart';
 import '../widgets/event_card.dart';
 import '../services/event_service.dart';
 import '../constants/app_colors.dart';
 
 class EventsPage extends StatefulWidget {
+  final Function(int)? onNavTap;
+
+  const EventsPage({this.onNavTap});
+
   @override
   _EventsPageState createState() => _EventsPageState();
 }
@@ -17,7 +20,6 @@ class _EventsPageState extends State<EventsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomNavbar(),
       body: SingleChildScrollView(
         child: Column(
           children: [

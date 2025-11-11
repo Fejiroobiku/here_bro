@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_navbar.dart';
 import '../widgets/custom_footer.dart';
 import '../services/event_service.dart';
 import '../constants/app_colors.dart';
@@ -13,7 +12,21 @@ class EventDetailsPage extends StatelessWidget {
     final event = EventService.getEventById(eventId) ?? EventService.mockEvents.first;
     
     return Scaffold(
-      appBar: CustomNavbar(),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.event, color: AppColors.emerald600),
+            SizedBox(width: 8),
+            Text('Event Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.gray800),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [

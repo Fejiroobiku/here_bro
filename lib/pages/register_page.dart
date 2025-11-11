@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_navbar.dart';
 import '../widgets/custom_footer.dart';
 import '../constants/app_colors.dart';
-import 'dashboard_page.dart';
 import 'login_page.dart';
 
 class RegisterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomNavbar(),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.event, color: AppColors.emerald600),
+            SizedBox(width: 8),
+            Text('EventEase', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.gray800),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -91,10 +103,7 @@ class RegisterPage extends StatelessWidget {
                             width: double.infinity, 
                             height: 48, 
                             child: ElevatedButton(
-                              onPressed: () => Navigator.push(
-                                context, 
-                                MaterialPageRoute(builder: (context) => DashboardPage())
-                              ), 
+                              onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.emerald600), 
                               child: Text(
                                 'Create Account', 
