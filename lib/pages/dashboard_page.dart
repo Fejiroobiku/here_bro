@@ -2,258 +2,266 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_footer.dart';
 import '../widgets/stats_card.dart';
 import '../constants/app_colors.dart';
+import '../services/firebase_auth_service.dart';
+import '../services/firestore_event_service.dart';
+import '../services/user_profile_service.dart';
 import 'create_event_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   final Function(int)? onNavTap;
 
   const DashboardPage({this.onNavTap});
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final _authService = FirebaseAuthService();
+  final _eventService = FirestoreEventService();
+  final _profileService = UserProfileService();
+
+  @override
   Widget build(BuildContext context) {
+    final currentUser = _authService.currentUser;
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.all(16),
+      body: currentUser == null
+          ? Center(
+              child: Text('Please login to view dashboard'),
+            )
+          : SingleChildScrollView(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Organizer Dashboard', 
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (context) => CreateEventPage())
-                        ),
-                        icon: Icon(Icons.add, size: 20),
-                        label: Text('Create Event'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.emerald600, 
-                          foregroundColor: Colors.white, 
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 24),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.2,
-                    ),
-                    itemCount: 4,
-                    itemBuilder: (context, index) => _buildStatsCard(index),
-                  ),
-                  SizedBox(height: 24),
-                  Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-                            children: [
-                              Text(
-                                'Your Events', 
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.gray800)
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Dashboard', 
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () => Navigator.push(
+                                context, 
+                                MaterialPageRoute(builder: (context) => CreateEventPage())
                               ),
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  OutlinedButton(
-                                    onPressed: () {}, 
-                                    child: Text('Upcoming'),
-                                    style: OutlinedButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 12)),
-                                  ),
-                                  OutlinedButton(
-                                    onPressed: () {}, 
-                                    child: Text('Past'),
-                                    style: OutlinedButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 12)),
-                                  ),
-                                  OutlinedButton(
-                                    onPressed: () {}, 
-                                    child: Text('Drafts'),
-                                    style: OutlinedButton.styleFrom(padding: EdgeInsets.symmetric(horizontal: 12)),
-                                  ),
-                                ],
+                              icon: Icon(Icons.add, size: 20),
+                              label: Text('Create Event'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.emerald600, 
+                                foregroundColor: Colors.white, 
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)
                               ),
-                            ]
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 24),
+
+                        // User Stats - Real-time from Firestore
+                        StreamBuilder<Map<String, dynamic>?>(
+                          stream: _profileService.getUserProfileStream(currentUser.uid),
+                          builder: (context, profileSnapshot) {
+                            if (!profileSnapshot.hasData) {
+                              return Container(
+                                height: 200,
+                                child: Center(
+                                  child: CircularProgressIndicator(color: AppColors.emerald600),
+                                ),
+                              );
+                            }
+
+                            final profile = profileSnapshot.data;
+                            final createdEventsCount = profile?['createdEventsCount'] ?? 0;
+                            final attendingCount = profile?['attendingEvents']?.length ?? 0;
+
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.2,
+                              ),
+                              itemCount: 4,
+                              itemBuilder: (context, index) => _buildStatsCard(
+                                index,
+                                createdEventsCount,
+                                attendingCount,
+                              ),
+                            );
+                          },
+                        ),
+                        SizedBox(height: 24),
+
+                        // Your Events Section - Real-time from Firestore
+                        Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                                  children: [
+                                    Text(
+                                      'Your Events', 
+                                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.gray800)
+                                    ),
+                                  ]
+                                ),
+                                SizedBox(height: 16),
+                                StreamBuilder(
+                                  stream: _eventService.getUserCreatedEvents(currentUser.uid),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return Center(
+                                        child: CircularProgressIndicator(color: AppColors.emerald600),
+                                      );
+                                    }
+
+                                    if (snapshot.hasError) {
+                                      return Text('Error: ${snapshot.error}');
+                                    }
+
+                                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                      return Container(
+                                        padding: EdgeInsets.all(32),
+                                        child: Column(
+                                          children: [
+                                            Icon(Icons.event_note, size: 48, color: AppColors.gray400),
+                                            SizedBox(height: 12),
+                                            Text(
+                                              'No events created yet',
+                                              style: TextStyle(color: AppColors.gray600),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+
+                                    final events = snapshot.data!;
+                                    return Column(
+                                      children: events.map((event) => _buildEventItem(event)).toList(),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: 16),
-                          ..._buildEventItems(),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                  CustomFooter(),
                 ],
               ),
             ),
-            CustomFooter(),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildStatsCard(int index) {
+  Widget _buildStatsCard(int index, int createdCount, int attendingCount) {
     final stats = [
       {
-        'title': 'Total Events', 
-        'value': '12', 
-        'subtitle': '+2 from last month', 
-        'icon': Icons.calendar_today, 
-        'color': AppColors.blue600
+        'title': 'Events Created',
+        'value': createdCount.toString(),
+        'subtitle': 'Total events created',
+        'icon': Icons.calendar_today,
+        'color': AppColors.blue600,
       },
       {
-        'title': 'Upcoming Events', 
-        'value': '4', 
-        'subtitle': 'Next: Tomorrow', 
-        'icon': Icons.access_time, 
-        'color': AppColors.emerald600
+        'title': 'Attending',
+        'value': attendingCount.toString(),
+        'subtitle': 'Events you joined',
+        'icon': Icons.check_circle,
+        'color': AppColors.emerald600,
       },
       {
-        'title': 'Total Attendees', 
-        'value': '327', 
-        'subtitle': '+15% from last month', 
-        'icon': Icons.people, 
-        'color': AppColors.purple600
+        'title': 'Total Attendees',
+        'value': '0',
+        'subtitle': 'Across all events',
+        'icon': Icons.people,
+        'color': AppColors.purple600,
       },
       {
-        'title': 'Avg. Attendance', 
-        'value': '72%', 
-        'subtitle': '+8% from last month', 
-        'icon': Icons.trending_up, 
-        'color': AppColors.yellow600
+        'title': 'This Month',
+        'value': '0',
+        'subtitle': 'Events created',
+        'icon': Icons.trending_up,
+        'color': AppColors.yellow600,
       },
     ];
+    
+    if (index >= stats.length) return SizedBox();
+    
     final stat = stats[index];
     return StatsCard(
-      title: stat['title'] as String, 
-      value: stat['value'] as String, 
-      subtitle: stat['subtitle'] as String, 
-      icon: stat['icon'] as IconData, 
-      color: stat['color'] as Color
+      title: stat['title'] as String,
+      value: stat['value'] as String,
+      subtitle: stat['subtitle'] as String,
+      icon: stat['icon'] as IconData,
+      color: stat['color'] as Color,
     );
   }
 
-  List<Widget> _buildEventItems() {
-    final events = [
-      {
-        'title': 'Tech Entrepreneurship Workshop', 
-        'organizer': 'Innovation Hub', 
-        'date': 'Nov 20, 2025', 
-        'time': '2:00 PM', 
-        'attendees': '45', 
-        'status': 'Upcoming', 
-        'statusColor': Colors.green
-      },
-      {
-        'title': 'Career Fair 2025', 
-        'organizer': 'University', 
-        'date': 'Nov 5, 2025', 
-        'time': '9:00 AM', 
-        'attendees': '122', 
-        'status': 'Completed', 
-        'statusColor': Colors.blue
-      },
-    ];
-
-    return events.map((event) {
-      return Container(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.gray200), 
-          borderRadius: BorderRadius.circular(8)
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 16, 
-                  backgroundColor: AppColors.gray200, 
-                  child: Icon(Icons.event, size: 16)
+  Widget _buildEventItem(dynamic event) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.gray200),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.emerald100,
+                child: Icon(Icons.event, size: 16, color: AppColors.emerald600),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      event.category ?? 'Event',
+                      style: TextStyle(color: AppColors.gray600, fontSize: 12),
+                    ),
+                  ],
                 ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event['title'] as String, 
-                        style: TextStyle(fontWeight: FontWeight.w600)
-                      ),
-                      Text(
-                        event['organizer'] as String, 
-                        style: TextStyle(color: AppColors.gray600, fontSize: 12)
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${event['date']} • ${event['time']}', 
-                  style: TextStyle(fontSize: 12, color: AppColors.gray600)
-                ),
-                Text(
-                  '${event['attendees']} attendees', 
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500)
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), 
-                  decoration: BoxDecoration(
-                    color: (event['statusColor'] as Color).withOpacity(0.1), 
-                    borderRadius: BorderRadius.circular(12)
-                  ), 
-                  child: Text(
-                    event['status'] as String, 
-                    style: TextStyle(
-                      color: event['statusColor'] as Color, 
-                      fontSize: 10, 
-                      fontWeight: FontWeight.w500
-                    )
-                  )
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {}, 
-                    child: Text('Edit', style: TextStyle(color: AppColors.emerald600))
-                  ),
-                ),
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {}, 
-                    child: Text('View', style: TextStyle(color: AppColors.gray600))
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }).toList();
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${event.date.toString().split(' ')[0]}',
+                style: TextStyle(fontSize: 12, color: AppColors.gray600),
+              ),
+              Text(
+                '${event.attendees} attendees',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

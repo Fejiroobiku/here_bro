@@ -83,10 +83,10 @@ class EventCard extends StatelessWidget {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.push(
+                      onTap: () => event.id != null ? Navigator.push(
                         context, 
-                        MaterialPageRoute(builder: (context) => EventDetailsPage(eventId: event.id))
-                      ),
+                        MaterialPageRoute(builder: (context) => EventDetailsPage(eventId: event.id!))
+                      ) : null,
                       child: Row(
                         children: [
                           Text('Details', style: TextStyle(color: AppColors.emerald600, fontWeight: FontWeight.w500, fontSize: 12)),

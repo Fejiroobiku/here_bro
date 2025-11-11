@@ -4,7 +4,7 @@ import '../services/event_service.dart';
 import '../constants/app_colors.dart';
 
 class EventDetailsPage extends StatelessWidget {
-  final int eventId;
+  final String eventId;
   const EventDetailsPage({required this.eventId});
 
   @override

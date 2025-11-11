@@ -3,7 +3,7 @@ import '../models/event.dart';
 class EventService {
   static final List<Event> mockEvents = [
     Event(
-      id: 1,
+      id: "1",
       title: "Campus Clean-Up Day",
       date: DateTime(2023, 11, 15),
       time: "09:00",
@@ -16,7 +16,7 @@ class EventService {
       status: "Upcoming",
     ),
     Event(
-      id: 2,
+      id: "2",
       title: "Tech Entrepreneurship Workshop",
       date: DateTime(2023, 11, 20),
       time: "14:00",
@@ -29,7 +29,7 @@ class EventService {
       status: "Upcoming",
     ),
     Event(
-      id: 3,
+      id: "3",
       title: "Community Health Fair",
       date: DateTime(2023, 11, 25),
       time: "10:00",
@@ -49,7 +49,7 @@ class EventService {
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
-  static Event? getEventById(int id) {
+  static Event? getEventById(String id) {
     try {
       return mockEvents.firstWhere((event) => event.id == id);
     } catch (e) {

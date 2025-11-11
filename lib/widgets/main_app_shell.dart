@@ -3,6 +3,7 @@ import '../constants/app_colors.dart';
 import '../pages/home_page.dart';
 import '../pages/events_page.dart';
 import '../pages/dashboard_page.dart';
+import '../pages/profile_page.dart';
 import '../pages/create_event_page.dart';
 
 class MainAppShell extends StatefulWidget {
@@ -33,6 +34,7 @@ class _MainAppShellState extends State<MainAppShell> {
     HomePage(onNavTap: _onItemTapped),
     EventsPage(onNavTap: _onItemTapped),
     DashboardPage(onNavTap: _onItemTapped),
+    ProfilePage(onNavTap: _onItemTapped),
   ];
 
   @override
@@ -49,6 +51,36 @@ class _MainAppShellState extends State<MainAppShell> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // Create Event Button (Top Right)
+          Padding(
+            padding: EdgeInsets.all(8.0),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CreateEventPage()),
+                );
+              },
+              icon: Icon(Icons.add, size: 18),
+              label: Text('Create', style: TextStyle(fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.emerald600,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+          // Profile Button
+          IconButton(
+            icon: Icon(Icons.person, color: AppColors.gray600),
+            onPressed: () => _onItemTapped(3),
+            tooltip: 'Profile',
+          ),
+          // Logout Button
           IconButton(
             icon: Icon(Icons.logout, color: AppColors.gray600),
             onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
@@ -71,57 +103,22 @@ class _MainAppShellState extends State<MainAppShell> {
           color: Colors.white,
           elevation: 0,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              // Create Event Button on the left
-              SizedBox(
-                width: 50,
-                height: 56,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CreateEventPage()),
-                    );
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add, color: AppColors.emerald600, size: 24),
-                      SizedBox(height: 2),
-                      Text(
-                        'Create',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.emerald600,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              _buildNavItem(
+                icon: Icons.home,
+                label: 'Home',
+                index: 0,
               ),
-              // Navigation items
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem(
-                      icon: Icons.home,
-                      label: 'Home',
-                      index: 0,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.explore,
-                      label: 'Browse',
-                      index: 1,
-                    ),
-                    _buildNavItem(
-                      icon: Icons.dashboard,
-                      label: 'Dashboard',
-                      index: 2,
-                    ),
-                  ],
-                ),
+              _buildNavItem(
+                icon: Icons.explore,
+                label: 'Browse',
+                index: 1,
+              ),
+              _buildNavItem(
+                icon: Icons.dashboard,
+                label: 'Dashboard',
+                index: 2,
               ),
             ],
           ),

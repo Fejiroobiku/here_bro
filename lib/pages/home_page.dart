@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_footer.dart';
 import '../widgets/event_card.dart';
-import '../services/event_service.dart';
+import '../services/firestore_event_service.dart';
 import '../constants/app_colors.dart';
 import 'events_page.dart';
 import 'create_event_page.dart';
 
 class HomePage extends StatelessWidget {
   final Function(int)? onNavTap;
+  final _eventService = FirestoreEventService();
 
-  const HomePage({this.onNavTap});
+  HomePage({this.onNavTap});
 
   @override
   Widget build(BuildContext context) {
@@ -105,11 +106,75 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: 16),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: EventService.mockEvents.length,
-                    itemBuilder: (context, index) => EventCard(event: EventService.mockEvents[index]),
+                  // Real-time Events Stream
+                  StreamBuilder(
+                    stream: _eventService.getAllEvents(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: CircularProgressIndicator(color: AppColors.emerald600),
+                          ),
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return Container(
+                          padding: EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.red.shade700, size: 40),
+                              SizedBox(height: 12),
+                              Text(
+                                'Failed to load events',
+                                style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                snapshot.error.toString(),
+                                style: TextStyle(color: Colors.red.shade600, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Container(
+                          padding: EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              Icon(Icons.event_available, size: 64, color: AppColors.gray400),
+                              SizedBox(height: 16),
+                              Text(
+                                'No events yet',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.gray600),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Create one to get started!',
+                                style: TextStyle(fontSize: 14, color: AppColors.gray500),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final events = snapshot.data!;
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: events.length,
+                        itemBuilder: (context, index) => EventCard(event: events[index]),
+                      );
+                    },
                   ),
                 ],
               ),
