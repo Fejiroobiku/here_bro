@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_footer.dart';
 import '../constants/app_colors.dart';
-import '../services/firebase_auth_service.dart';
+import '../services/auth_service.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,7 +12,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = FirebaseAuthService();
+  final _authService = AuthService();
   
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -43,6 +43,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (mounted) {
+        // FIXED: Navigate to home which shows MainAppShell with bottom navigation
         Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
@@ -216,8 +217,13 @@ class _LoginPageState extends State<LoginPage> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: _isLoading ? null : () {
+                            if (_emailController.text.isEmpty) {
+                              _showError('Please enter your email first');
+                              return;
+                            }
+                            _authService.resetPassword(email: _emailController.text.trim());
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Password reset feature coming soon')),
+                              SnackBar(content: Text('Password reset instructions sent to your email')),
                             );
                           },
                           child: Text(

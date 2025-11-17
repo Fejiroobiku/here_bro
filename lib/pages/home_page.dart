@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_footer.dart';
 import '../widgets/event_card.dart';
-import '../services/firestore_event_service.dart';
+import '../services/event_service.dart';
 import '../constants/app_colors.dart';
 import 'events_page.dart';
 import 'create_event_page.dart';
 
 class HomePage extends StatelessWidget {
   final Function(int)? onNavTap;
-  final _eventService = FirestoreEventService();
+  final _eventService = EventService();
 
   HomePage({this.onNavTap});
+
+  Future<List<dynamic>> _loadAllEvents() async {
+    print('🔄 HomePage: Loading all events...');
+    await _eventService.initializeMockData();
+    final events = await _eventService.getEvents();
+    print('✅ HomePage: Loaded ${events.length} events');
+    return events;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,103 +88,96 @@ class HomePage extends StatelessWidget {
             ),
             SizedBox(height: 32),
 
-            // Events Section
+            // All Events Section
             Container(
               padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: FutureBuilder<List<dynamic>>(
+                future: _loadAllEvents(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(color: AppColors.emerald600),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Container(
+                      padding: EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red.shade700, size: 40),
+                          SizedBox(height: 12),
+                          Text(
+                            'Failed to load events',
+                            style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final events = snapshot.data ?? [];
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Upcoming Events', 
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'All Events', 
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.gray800)
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => EventsPage())),
+                            child: Row(
+                              children: [
+                                Text('Browse All', style: TextStyle(color: AppColors.emerald600)), 
+                                SizedBox(width: 4), 
+                                Icon(Icons.chevron_right, size: 16, color: AppColors.emerald600)
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => EventsPage())),
-                        child: Row(
-                          children: [
-                            Text('View all', style: TextStyle(color: AppColors.emerald600)), 
-                            SizedBox(width: 4), 
-                            Icon(Icons.chevron_right, size: 16, color: AppColors.emerald600)
-                          ],
-                        ),
-                      ),
+                      SizedBox(height: 16),
+                      
+                      events.isEmpty
+                          ? Container(
+                              padding: EdgeInsets.all(32),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.event_available, size: 64, color: AppColors.gray400),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No events yet',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.gray600),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Create one to get started!',
+                                    style: TextStyle(fontSize: 14, color: AppColors.gray500),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: events.length,
+                              itemBuilder: (context, index) => EventCard(event: events[index]),
+                            ),
                     ],
-                  ),
-                  SizedBox(height: 16),
-                  // Real-time Events Stream
-                  StreamBuilder(
-                    stream: _eventService.getAllEvents(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: CircularProgressIndicator(color: AppColors.emerald600),
-                          ),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return Container(
-                          padding: EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red.shade700, size: 40),
-                              SizedBox(height: 12),
-                              Text(
-                                'Failed to load events',
-                                style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.w500),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                snapshot.error.toString(),
-                                style: TextStyle(color: Colors.red.shade600, fontSize: 12),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Container(
-                          padding: EdgeInsets.all(32),
-                          child: Column(
-                            children: [
-                              Icon(Icons.event_available, size: 64, color: AppColors.gray400),
-                              SizedBox(height: 16),
-                              Text(
-                                'No events yet',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: AppColors.gray600),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Create one to get started!',
-                                style: TextStyle(fontSize: 14, color: AppColors.gray500),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      final events = snapshot.data!;
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: events.length,
-                        itemBuilder: (context, index) => EventCard(event: events[index]),
-                      );
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
             ),
             SizedBox(height: 32),

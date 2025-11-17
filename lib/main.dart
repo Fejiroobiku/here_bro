@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/create_event_page.dart';
 import 'constants/app_colors.dart';
 import 'widgets/main_app_shell.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    print('Error initializing Firebase: $e');
-  }
-  
+void main() {
   runApp(EventEaseApp());
 }
 

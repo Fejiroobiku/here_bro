@@ -51,39 +51,34 @@ class _MainAppShellState extends State<MainAppShell> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // Create Event Button (Top Right)
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => CreateEventPage()),
-                );
-              },
-              icon: Icon(Icons.add, size: 18),
-              label: Text('Create', style: TextStyle(fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.emerald600,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          // Create Event Button (Top Right) - Only show on Home and Events pages
+          if (_selectedIndex == 0 || _selectedIndex == 1)
+            Padding(
+              padding: EdgeInsets.all(8.0),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CreateEventPage()),
+                  );
+                },
+                icon: Icon(Icons.add, size: 18),
+                label: Text('Create', style: TextStyle(fontWeight: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.emerald600,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
-          ),
-          // Profile Button
-          IconButton(
-            icon: Icon(Icons.person, color: AppColors.gray600),
-            onPressed: () => _onItemTapped(3),
-            tooltip: 'Profile',
-          ),
-          // Logout Button
+          // Logout Button - Show on all pages
           IconButton(
             icon: Icon(Icons.logout, color: AppColors.gray600),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+            onPressed: () => _showLogoutConfirmation(context),
             tooltip: 'Logout',
           ),
         ],
@@ -107,18 +102,27 @@ class _MainAppShellState extends State<MainAppShell> {
             children: [
               _buildNavItem(
                 icon: Icons.home,
+                activeIcon: Icons.home,
                 label: 'Home',
                 index: 0,
               ),
               _buildNavItem(
-                icon: Icons.explore,
+                icon: Icons.explore_outlined,
+                activeIcon: Icons.explore,
                 label: 'Browse',
                 index: 1,
               ),
               _buildNavItem(
-                icon: Icons.dashboard,
+                icon: Icons.dashboard_outlined,
+                activeIcon: Icons.dashboard,
                 label: 'Dashboard',
                 index: 2,
+              ),
+              _buildNavItem(
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: 'Profile',
+                index: 3,
               ),
             ],
           ),
@@ -129,28 +133,57 @@ class _MainAppShellState extends State<MainAppShell> {
 
   Widget _buildNavItem({
     required IconData icon,
+    required IconData activeIcon,
     required String label,
     required int index,
   }) {
     final isSelected = _selectedIndex == index;
     return InkWell(
       onTap: () => _onItemTapped(index),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? AppColors.emerald600 : AppColors.gray600,
-            size: 24,
-          ),
-          SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
               color: isSelected ? AppColors.emerald600 : AppColors.gray600,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              size: 24,
             ),
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isSelected ? AppColors.emerald600 : AppColors.gray600,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Logout'),
+        content: Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('Logout'),
           ),
         ],
       ),

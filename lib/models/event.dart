@@ -1,20 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Event {
-  final String? id; // Firestore document ID
+  final String? id;
   final String title;
   final DateTime date;
-  final String? time; // Optional, can be extracted from date
+  final String? time;
   final String location;
   final String description;
-  final String image;
+  final String image; // This will be ImageKit.io URL
   final int attendees;
-  final String organizer; // User ID of event creator
+  final String organizer;
   final String? category;
   final String? status;
-  final String? userId; // Firestore user ID
+  final String? userId;
   final DateTime? createdAt;
-  final List<dynamic>? attendeesList;
+  final List<String>? attendeesList;
 
   Event({
     this.id,
@@ -33,61 +31,71 @@ class Event {
     this.attendeesList,
   });
 
-  // Create Event from Firestore DocumentSnapshot
-  factory Event.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    
+  // Create Event from JSON (for local storage)
+  factory Event.fromJson(Map<String, dynamic> json) {
     DateTime eventDate = DateTime.now();
-    if (data['eventDate'] != null) {
-      if (data['eventDate'] is Timestamp) {
-        eventDate = (data['eventDate'] as Timestamp).toDate();
-      } else if (data['eventDate'] is DateTime) {
-        eventDate = data['eventDate'] as DateTime;
+    if (json['date'] != null) {
+      if (json['date'] is String) {
+        eventDate = DateTime.parse(json['date']);
+      } else if (json['date'] is DateTime) {
+        eventDate = json['date'] as DateTime;
       }
     }
 
     DateTime? createdAtDate;
-    if (data['createdAt'] != null) {
-      if (data['createdAt'] is Timestamp) {
-        createdAtDate = (data['createdAt'] as Timestamp).toDate();
-      } else if (data['createdAt'] is DateTime) {
-        createdAtDate = data['createdAt'] as DateTime;
+    if (json['createdAt'] != null) {
+      if (json['createdAt'] is String) {
+        createdAtDate = DateTime.parse(json['createdAt']);
+      } else if (json['createdAt'] is DateTime) {
+        createdAtDate = json['createdAt'] as DateTime;
       }
     }
 
     return Event(
-      id: doc.id,
-      title: data['title'] ?? '',
+      id: json['id'],
+      title: json['title'] ?? '',
       date: eventDate,
-      time: eventDate.toString().split(' ')[1].substring(0, 5), // HH:mm format
-      location: data['location'] ?? '',
-      description: data['description'] ?? '',
-      image: data['imageUrl'] ?? '',
-      attendees: data['attendeeCount'] ?? 0,
-      organizer: data['userId'] ?? '',
-      category: data['category'],
-      status: data['status'],
-      userId: data['userId'],
+      time: json['time'] ?? _extractTimeFromDateTime(eventDate),
+      location: json['location'] ?? '',
+      description: json['description'] ?? '',
+      image: json['image'] ?? '',
+      attendees: json['attendees'] ?? 0,
+      organizer: json['organizer'] ?? '',
+      category: json['category'],
+      status: json['status'] ?? 'active',
+      userId: json['userId'],
       createdAt: createdAtDate,
-      attendeesList: data['attendees'],
+      attendeesList: json['attendeesList'] != null 
+          ? List<String>.from(json['attendeesList'])
+          : [],
     );
   }
 
-  // Convert Event to Map for Firestore
-  Map<String, dynamic> toFirestore() {
+  // Convert Event to JSON for local storage
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
-      'eventDate': date,
+      'date': date.toIso8601String(),
+      'time': time ?? _extractTimeFromDateTime(date),
       'location': location,
       'description': description,
-      'imageUrl': image,
-      'userId': userId,
+      'image': image,
+      'attendees': attendees,
+      'organizer': organizer,
       'category': category,
-      'status': status,
-      'attendeeCount': attendees,
-      'createdAt': createdAt ?? Timestamp.now(),
-      'updatedAt': Timestamp.now(),
+      'status': status ?? 'active',
+      'userId': userId,
+      'createdAt': createdAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'attendeesList': attendeesList ?? [],
     };
+  }
+
+  // Helper method to extract time from DateTime
+  static String _extractTimeFromDateTime(DateTime dateTime) {
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 
   Event copyWith({
@@ -104,7 +112,7 @@ class Event {
     String? status,
     String? userId,
     DateTime? createdAt,
-    List<dynamic>? attendeesList,
+    List<String>? attendeesList,
   }) {
     return Event(
       id: id ?? this.id,
@@ -122,5 +130,28 @@ class Event {
       createdAt: createdAt ?? this.createdAt,
       attendeesList: attendeesList ?? this.attendeesList,
     );
+  }
+
+  // Get optimized image URL for display
+  String getOptimizedImageUrl({int width = 400, int height = 300}) {
+    if (image.isEmpty) return '';
+    
+    // If it's already an ImageKit URL, add transformations
+    if (image.contains('ik.imagekit.io')) {
+      return '$image?tr=w-$width,h-$height,c-maintain_ratio,f-webp,q-80';
+    }
+    
+    return image; // Return original if not ImageKit URL
+  }
+
+  // Get thumbnail URL
+  String getThumbnailUrl({int size = 150}) {
+    if (image.isEmpty) return '';
+    
+    if (image.contains('ik.imagekit.io')) {
+      return '$image?tr=w-$size,h-$size,c-fill,f-webp,q-70';
+    }
+    
+    return image;
   }
 }

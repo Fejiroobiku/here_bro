@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_footer.dart';
 import '../constants/app_colors.dart';
+import '../services/auth_service.dart';
+import '../services/local_storage_service.dart';
 
 class ProfilePage extends StatelessWidget {
   final Function(int)? onNavTap;
@@ -9,270 +10,253 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Profile Header with Gradient
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.emerald600, AppColors.blue600],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+    final authService = AuthService();
+    final storageService = LocalStorageService();
+    
+    return FutureBuilder(
+      future: authService.currentUser,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        final user = snapshot.data;
+        
+        if (user == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: AppColors.gray400),
+                SizedBox(height: 16),
+                Text(
+                  'No user found',
+                  style: TextStyle(fontSize: 18, color: AppColors.gray600),
                 ),
-              ),
-              padding: EdgeInsets.fromLTRB(16, 40, 16, 32),
-              child: Column(
-                children: [
-                  // Profile Avatar
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white,
-                    child: CircleAvatar(
-                      radius: 48,
-                      backgroundColor: AppColors.gray200,
-                      child: Icon(
-                        Icons.person,
-                        size: 50,
-                        color: AppColors.emerald600,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  // User Name
-                  Text(
-                    'John Doe',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  // User Email
-                  Text(
-                    'john.doe@example.com',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  // User Phone
-                  Text(
-                    '+1 (555) 123-4567',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
-                  ),
-                ],
-              ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                  },
+                  child: Text('Go to Login'),
+                ),
+              ],
             ),
+          );
+        }
 
-            // Profile Information
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Account Information Section
-                  Text(
-                    'Account Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
+        return Scaffold(
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Profile Header
+                Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: AppColors.emerald100,
+                          child: Icon(Icons.person, size: 50, color: AppColors.emerald600),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          user.name,
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          user.email,
+                          style: TextStyle(fontSize: 16, color: AppColors.gray600),
+                        ),
+                        SizedBox(height: 16),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.emerald100, // Use emerald100 directly
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Member since ${_formatDate(user.createdAt)}',
+                            style: TextStyle(color: AppColors.emerald600, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 16),
-                  
-                  // Info Card
-                  Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          _buildInfoRow('First Name', 'John'),
-                          Divider(),
-                          _buildInfoRow('Last Name', 'Doe'),
-                          Divider(),
-                          _buildInfoRow('Email', 'john.doe@example.com'),
-                          Divider(),
-                          _buildInfoRow('Phone', '+1 (555) 123-4567'),
-                          Divider(),
-                          _buildInfoRow('Member Since', 'January 2024'),
-                        ],
-                      ),
+                ),
+                SizedBox(height: 24),
+
+                // Account Details
+                Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Account Details',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.gray800),
+                        ),
+                        SizedBox(height: 16),
+                        _buildDetailItem('User ID', user.id),
+                        _buildDetailItem('Email', user.email),
+                        _buildDetailItem('Full Name', user.name),
+                        _buildDetailItem('Member Since', _formatDate(user.createdAt)),
+                        if (user.profilePictureUrl != null)
+                          _buildDetailItem('Profile Picture', 'Uploaded'),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 24),
+                ),
+                SizedBox(height: 24),
 
-                  // Statistics Section
-                  Text(
-                    'Your Statistics',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Stats Grid
-                  GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                // Actions
+                Card(
+                  child: Column(
                     children: [
-                      _buildStatCard('Events Created', '12', AppColors.emerald600),
-                      _buildStatCard('Attendees', '327', AppColors.blue600),
-                      _buildStatCard('Events Attended', '8', AppColors.purple600),
-                      _buildStatCard('Followers', '45', AppColors.yellow600),
+                      ListTile(
+                        leading: Icon(Icons.edit, color: AppColors.emerald600),
+                        title: Text('Edit Profile'),
+                        trailing: Icon(Icons.chevron_right),
+                        onTap: () {
+                          _showEditProfileDialog(context, user, authService);
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.settings, color: AppColors.emerald600),
+                        title: Text('Settings'),
+                        trailing: Icon(Icons.chevron_right),
+                        onTap: () {
+                          // Navigate to settings
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.help, color: AppColors.emerald600),
+                        title: Text('Help & Support'),
+                        trailing: Icon(Icons.chevron_right),
+                        onTap: () {
+                          // Navigate to help
+                        },
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.logout, color: Colors.red),
+                        title: Text('Logout', style: TextStyle(color: Colors.red)),
+                        onTap: () {
+                          _showLogoutConfirmation(context, authService);
+                        },
+                      ),
                     ],
                   ),
-                  SizedBox(height: 24),
-
-                  // Action Buttons
-                  Text(
-                    'Account Settings',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Settings Options
-                  _buildSettingOption(Icons.edit, 'Edit Profile', () {}),
-                  SizedBox(height: 12),
-                  _buildSettingOption(Icons.lock, 'Change Password', () {}),
-                  SizedBox(height: 12),
-                  _buildSettingOption(Icons.notifications, 'Notifications', () {}),
-                  SizedBox(height: 12),
-                  _buildSettingOption(Icons.privacy_tip, 'Privacy Settings', () {}),
-                  SizedBox(height: 24),
-
-                  // Logout Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: Text(
-                        'Logout',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                ],
-              ),
-            ),
-
-            CustomFooter(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.gray600,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.gray800,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, Color color) {
-    return Card(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        padding: EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.gray600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingOption(IconData icon, String title, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColors.gray200),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.emerald600, size: 24),
-            SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.gray800,
-                  fontWeight: FontWeight.w500,
                 ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              '$label:',
+              style: TextStyle(fontWeight: FontWeight.w500, color: AppColors.gray700),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(color: AppColors.gray600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  void _showLogoutConfirmation(BuildContext context, AuthService authService) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Logout'),
+        content: Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              authService.logout();
+              Navigator.of(ctx).pop();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditProfileDialog(BuildContext context, dynamic user, AuthService authService) {
+    final nameController = TextEditingController(text: user.name);
+    
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Edit Profile'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Full Name',
+                border: OutlineInputBorder(),
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.gray400, size: 20),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await authService.updateProfile(
+                  userId: user.id,
+                  name: nameController.text,
+                );
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Profile updated successfully!')),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to update profile: $e')),
+                );
+              }
+            },
+            child: Text('Save'),
+          ),
+        ],
       ),
     );
   }

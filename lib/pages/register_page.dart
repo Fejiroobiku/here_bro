@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_footer.dart';
 import '../constants/app_colors.dart';
-import '../services/firebase_auth_service.dart';
-import '../services/user_profile_service.dart';
+import '../services/auth_service.dart';
 import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -18,8 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  final _authService = FirebaseAuthService();
-  final _profileService = UserProfileService();
+  final _authService = AuthService();
   
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -64,8 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      // Register user with Firebase
-      final userCredential = await _authService.signUp(
+      await _authService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         firstName: _firstNameController.text.trim(),
@@ -73,19 +70,9 @@ class _RegisterPageState extends State<RegisterPage> {
         phone: _phoneController.text.trim(),
       );
 
-      // Create user profile in Firestore
-      if (userCredential.user != null) {
-        await _profileService.createUserProfile(
-          userId: userCredential.user!.uid,
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          email: _emailController.text.trim(),
-          phone: _phoneController.text.trim(),
-        );
-
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+      if (mounted) {
+        // FIXED: Navigate to home which shows MainAppShell with bottom navigation
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       _showError(e.toString());
@@ -132,7 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
               padding: EdgeInsets.all(16),
               child: Center(
                 child: Container(
-                  constraints: BoxConstraints(maxWidth: 500), // Fixed this line
+                  constraints: BoxConstraints(maxWidth: 500),
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white, 
