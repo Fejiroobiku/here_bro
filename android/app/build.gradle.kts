@@ -3,6 +3,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // Add this line for Firebase
 }
 
 android {
@@ -11,12 +12,15 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Enable core library desugaring for Java 8+ API support
+        // This is crucial for Firebase compatibility as mentioned in Android docs
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
     defaultConfig {
@@ -41,4 +45,13 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Use the Firebase BoM (Bill of Materials) to ensure compatible versions
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+
+    // Add core library desugaring for Java 8+ API support
+    // This is required as per Android documentation for Java 8+ API desugaring
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
